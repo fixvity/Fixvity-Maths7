@@ -38,7 +38,6 @@ input{
   border:1px solid #d1d5db;
   font-size:15px;
 }
-
 button{
   width:100%;
   padding:14px;
@@ -82,15 +81,15 @@ button.secondary{
   padding:4px 8px;
   border-radius:999px;
   font-size:12px;
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 .warning{
   background:#fff7ed;
   color:#9a3412;
   padding:10px;
   border-radius:8px;
-  margin-bottom:10px;
   font-size:14px;
+  margin-bottom:10px;
 }
 .error{color:#dc2626;font-weight:600}
 code{
@@ -105,6 +104,7 @@ code{
 <body>
 <div class="container">
 
+<!-- INPUT CARD -->
 <div class="card">
 <h1>Integral Calculator</h1>
 <p class="muted">Numerical integration using Simpson’s Rule</p>
@@ -113,7 +113,7 @@ code{
 <input id="fx" value="sin(x^2)">
 
 <label>Lower limit (a)</label>
-<input id="a" value="0">
+<input id="a" value="3">
 
 <label>Upper limit (b)</label>
 <input id="b" value="2">
@@ -122,16 +122,12 @@ code{
 <button class="secondary" onclick="resetAll()">Reset</button>
 </div>
 
+<!-- OUTPUT -->
 <div class="grid">
 
 <div class="card">
 <h3>Result</h3>
-
-<div class="warning">
-⚠ Numerical integration is an approximation. Accuracy depends on step size and function smoothness.
-</div>
-
-<div id="result" class="result"></div>
+<div id="result"></div>
 </div>
 
 <div class="card">
@@ -149,58 +145,64 @@ function clean(expr){
     .replace(/sin/g,"Math.sin")
     .replace(/cos/g,"Math.cos")
     .replace(/tan/g,"Math.tan")
-    .replace(/exp/g,"Math.exp")
-    .replace(/log/g,"Math.log")
-    .replace(/pi/g,"Math.PI");
-}
-
-function simpson(f,a,b,n){
-  if(n%2!==0) n++;
-  const h=(b-a)/n;
-  let sum=f(a)+f(b);
-
-  for(let i=1;i<n;i++){
-    const x=a+i*h;
-    sum+=f(x)*(i%2===0?2:4);
-  }
-  return sum*h/3;
+    .replace(/ln/g,"Math.log");
 }
 
 function calculate(){
-  result.innerHTML="";
+  const resultBox=document.getElementById("result");
+  const steps=document.getElementById("steps");
+  resultBox.innerHTML="";
   steps.innerHTML="";
 
-  let expr=clean(fx.value);
-  let A=Number(a.value);
-  let B=Number(b.value);
+  let expr=clean(document.getElementById("fx").value);
+  let a=parseFloat(document.getElementById("a").value);
+  let b=parseFloat(document.getElementById("b").value);
 
-  try{
-    const f=new Function("x","return "+expr);
-    const n=1000; // high accuracy
-    const val=simpson(f,A,B,n);
-
-    result.innerHTML=`
-      <span class="badge">Definite Integral</span><br>
-      ∫<sub>${A}</sub><sup>${B}</sup> f(x) dx ≈
-      <code>${val.toFixed(6)}</code>
-    `;
-
-    steps.innerHTML+=`
-      <div class="step">Composite Simpson’s Rule applied</div>
-      <div class="step">Interval divided into n = ${n} subintervals</div>
-      <div class="step">Step size h = ${(B-A)/n}</div>
-      <div class="step">Even-odd weighted summation used</div>
-      <div class="step">Accurate for smooth functions</div>
-    `;
-  }catch{
-    result.innerHTML=`<span class="error">Invalid or unsupported expression</span>`;
+  if(isNaN(a)||isNaN(b)){
+    resultBox.innerHTML='<span class="error">Invalid limits</span>';
+    return;
   }
+
+  let sign=1;
+  if(a>b){ [a,b]=[b,a]; sign=-1; }
+
+  const f=Function("x","return "+expr);
+
+  const n=1000;
+  const h=(b-a)/n;
+
+  let sum=f(a)+f(b);
+  for(let i=1;i<n;i++){
+    const x=a+i*h;
+    sum+= (i%2===0 ? 2 : 4)*f(x);
+  }
+
+  let integral=(h/3)*sum;
+  integral*=sign;
+
+  resultBox.innerHTML=`
+    <div class="warning">
+      ⚠ Numerical integration is an approximation.
+      Accuracy depends on step size and smoothness.
+    </div>
+    <span class="badge">Definite Integral</span><br><br>
+    ∫<sub>${sign<0?document.getElementById("a").value:a}</sub><sup>${sign<0?document.getElementById("b").value:b}</sup>
+    f(x) dx ≈ <code>${integral.toFixed(6)}</code>
+  `;
+
+  steps.innerHTML=`
+    <div class="step">Composite Simpson’s Rule applied</div>
+    <div class="step">Interval divided into n = ${n} subintervals</div>
+    <div class="step">Step size h = ${(b-a)/n}</div>
+    <div class="step">Even-odd weighted summation used</div>
+    <div class="step">Sign corrected automatically if a &gt; b</div>
+  `;
 }
 
 function resetAll(){
   fx.value="sin(x^2)";
-  a.value=0;
-  b.value=2;
+  a.value="";
+  b.value="";
   result.innerHTML="";
   steps.innerHTML="";
 }
