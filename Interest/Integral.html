@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Integral Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  background:#f4f6fb;
+  color:#111827;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:16px;
+}
+.card{
+  background:#fff;
+  border-radius:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+  padding:18px;
+  margin-bottom:16px;
+}
+h1{margin:0;color:#2563eb}
+p.muted{color:#6b7280;margin-top:4px}
+
+label{font-weight:600;font-size:14px}
+input{
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  margin-bottom:14px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  font-size:15px;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#2563eb;
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
+button.secondary{
+  background:#eef2ff;
+  color:#111;
+  margin-top:10px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
+}
+
+.result{
+  background:#f9fafb;
+  border-radius:10px;
+  padding:14px;
+}
+.step{
+  background:#f3f4f6;
+  border-radius:8px;
+  padding:10px;
+  margin-bottom:8px;
+}
+.badge{
+  display:inline-block;
+  background:#e0e7ff;
+  color:#1e3a8a;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:12px;
+  margin-bottom:8px;
+}
+.warning{
+  background:#fff7ed;
+  color:#9a3412;
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:10px;
+  font-size:14px;
+}
+.error{color:#dc2626;font-weight:600}
+code{
+  background:#111827;
+  color:#f9fafb;
+  padding:4px 6px;
+  border-radius:6px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="card">
+<h1>Integral Calculator</h1>
+<p class="muted">Numerical integration using Simpson’s Rule</p>
+
+<label>Function f(x)</label>
+<input id="fx" value="sin(x^2)">
+
+<label>Lower limit (a)</label>
+<input id="a" value="0">
+
+<label>Upper limit (b)</label>
+<input id="b" value="2">
+
+<button onclick="calculate()">Calculate Integral</button>
+<button class="secondary" onclick="resetAll()">Reset</button>
+</div>
+
+<div class="grid">
+
+<div class="card">
+<h3>Result</h3>
+
+<div class="warning">
+⚠ Numerical integration is an approximation. Accuracy depends on step size and function smoothness.
+</div>
+
+<div id="result" class="result"></div>
+</div>
+
+<div class="card">
+<h3>Step-by-Step</h3>
+<div id="steps"></div>
+</div>
+
+</div>
+</div>
+
+<script>
+function clean(expr){
+  return expr
+    .replace(/\^/g,"**")
+    .replace(/sin/g,"Math.sin")
+    .replace(/cos/g,"Math.cos")
+    .replace(/tan/g,"Math.tan")
+    .replace(/exp/g,"Math.exp")
+    .replace(/log/g,"Math.log")
+    .replace(/pi/g,"Math.PI");
+}
+
+function simpson(f,a,b,n){
+  if(n%2!==0) n++;
+  const h=(b-a)/n;
+  let sum=f(a)+f(b);
+
+  for(let i=1;i<n;i++){
+    const x=a+i*h;
+    sum+=f(x)*(i%2===0?2:4);
+  }
+  return sum*h/3;
+}
+
+function calculate(){
+  result.innerHTML="";
+  steps.innerHTML="";
+
+  let expr=clean(fx.value);
+  let A=Number(a.value);
+  let B=Number(b.value);
+
+  try{
+    const f=new Function("x","return "+expr);
+    const n=1000; // high accuracy
+    const val=simpson(f,A,B,n);
+
+    result.innerHTML=`
+      <span class="badge">Definite Integral</span><br>
+      ∫<sub>${A}</sub><sup>${B}</sup> f(x) dx ≈
+      <code>${val.toFixed(6)}</code>
+    `;
+
+    steps.innerHTML+=`
+      <div class="step">Composite Simpson’s Rule applied</div>
+      <div class="step">Interval divided into n = ${n} subintervals</div>
+      <div class="step">Step size h = ${(B-A)/n}</div>
+      <div class="step">Even-odd weighted summation used</div>
+      <div class="step">Accurate for smooth functions</div>
+    `;
+  }catch{
+    result.innerHTML=`<span class="error">Invalid or unsupported expression</span>`;
+  }
+}
+
+function resetAll(){
+  fx.value="sin(x^2)";
+  a.value=0;
+  b.value=2;
+  result.innerHTML="";
+  steps.innerHTML="";
+}
+</script>
+
+</body>
+</html>
